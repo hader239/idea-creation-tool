@@ -1,0 +1,7 @@
+.venv/
+ideas/
+research/
+used_topics.txt
+__pycache__/
+*.pyc
+.env
