@@ -23,7 +23,13 @@ def main():
     )
     args = parser.parse_args()
 
-    asyncio.run(run_research(args.domain, guided=args.guided))
+    try:
+        asyncio.run(run_research(args.domain, guided=args.guided))
+    except KeyboardInterrupt:
+        print("\nResearch interrupted.")
+    except Exception as e:
+        print(f"\nERROR: {type(e).__name__}: {e}")
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

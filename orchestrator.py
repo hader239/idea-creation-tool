@@ -118,10 +118,21 @@ def save_research(output: TopicResearchOutput) -> str:
 
 
 async def dispatch_source_agents(topic: str) -> list[str]:
-    result = await Runner.run(dispatcher, topic)
-    decision = result.final_output
-    if not isinstance(decision, DispatchDecision):
-        raise TypeError(f"Dispatcher returned {type(decision).__name__}, expected DispatchDecision")
+    try:
+        result = await Runner.run(dispatcher, topic)
+        decision = result.final_output
+        if not isinstance(decision, DispatchDecision):
+            raise TypeError(
+                f"Dispatcher returned {type(decision).__name__}, "
+                "expected DispatchDecision"
+            )
+    except Exception as e:
+        print(
+            f"  WARNING: dispatcher failed "
+            f"({type(e).__name__}: {e}), using default agents"
+        )
+        return list(SOURCE_AGENTS.keys())[:2]
+
     valid = [name for name in decision.agents if name in SOURCE_AGENTS]
     if not valid:
         print(
