@@ -9,12 +9,12 @@ from agents import Runner, trace
 from models import (
     DispatchDecision,
     ResearchMetadata,
+    ResearchTopic,
     SourceAgentResult,
     SynthesisResult,
     TopicResearchOutput,
     TopicScorerResult,
     TopicScoutResult,
-    ResearchTopic,
 )
 from research_agents import (
     SOURCE_AGENTS,
@@ -131,7 +131,8 @@ async def run_source_agent(agent_name: str, topic: str) -> SourceAgentResult:
     result = await Runner.run(agent, topic)
     output = result.final_output
     if not isinstance(output, SourceAgentResult):
-        raise TypeError(f"{agent_name} returned {type(output).__name__}, expected SourceAgentResult")
+        got = type(output).__name__
+        raise TypeError(f"{agent_name} returned {got}, expected SourceAgentResult")
     output.agent_name = agent_name
     return output
 
@@ -166,7 +167,8 @@ async def research_topic(topic: str, domain: str) -> TopicResearchOutput:
     synthesis_result = await Runner.run(synthesizer, synthesis_input)
     synthesis = synthesis_result.final_output
     if not isinstance(synthesis, SynthesisResult):
-        raise TypeError(f"Synthesizer returned {type(synthesis).__name__}, expected SynthesisResult")
+        got = type(synthesis).__name__
+        raise TypeError(f"Synthesizer returned {got}, expected SynthesisResult")
 
     return TopicResearchOutput(
         topic=topic,
@@ -190,7 +192,8 @@ async def run_research(domain: str, guided: bool = False):
         scout_result = await Runner.run(topic_scout, scout_input)
         topics = scout_result.final_output
         if not isinstance(topics, TopicScoutResult):
-            raise TypeError(f"Topic Scout returned {type(topics).__name__}, expected TopicScoutResult")
+            got = type(topics).__name__
+            raise TypeError(f"Topic Scout returned {got}, expected TopicScoutResult")
         print(f"Discovered {len(topics.topics)} topics")
 
         if guided:
@@ -203,7 +206,8 @@ async def run_research(domain: str, guided: bool = False):
             scorer_result = await Runner.run(topic_scorer, scorer_input)
             scored = scorer_result.final_output
             if not isinstance(scored, TopicScorerResult):
-                raise TypeError(f"Topic Scorer returned {type(scored).__name__}, expected TopicScorerResult")
+                got = type(scored).__name__
+                raise TypeError(f"Topic Scorer returned {got}, expected TopicScorerResult")
             selected = [
                 ResearchTopic(topic=st.topic, reasoning=st.reasoning, source=st.source)
                 for st in scored.ranked_topics[:6]

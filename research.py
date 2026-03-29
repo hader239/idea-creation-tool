@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from orchestrator import run_research
+from orchestrator import run_research  # noqa: E402
 
 
 def main():

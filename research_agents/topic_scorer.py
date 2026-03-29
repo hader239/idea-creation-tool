@@ -1,4 +1,4 @@
-from agents import Agent, ModelSettings
+from agents import Agent
 
 from models import TopicScorerResult
 
