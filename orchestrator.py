@@ -15,7 +15,6 @@ from models import (
     TopicScorerResult,
     TopicScoutResult,
     ResearchTopic,
-    RawFinding,
 )
 from research_agents import (
     SOURCE_AGENTS,
@@ -31,7 +30,8 @@ RESEARCH_DIR = "research"
 def slugify(text: str) -> str:
     text = text.lower().strip()
     text = re.sub(r"[^\w\s-]", "", text)
-    return re.sub(r"[\s_]+", "-", text)[:80]
+    slug = re.sub(r"[\s_]+", "-", text)[:80]
+    return slug or "unnamed-topic"
 
 
 def load_covered_topics() -> list[str]:
@@ -118,7 +118,8 @@ def save_research(output: TopicResearchOutput) -> str:
 async def dispatch_source_agents(topic: str) -> list[str]:
     result = await Runner.run(dispatcher, topic)
     decision = result.final_output
-    assert isinstance(decision, DispatchDecision)
+    if not isinstance(decision, DispatchDecision):
+        raise TypeError(f"Dispatcher returned {type(decision).__name__}, expected DispatchDecision")
     valid = [name for name in decision.agents if name in SOURCE_AGENTS]
     if not valid:
         valid = ["community_hunter", "news_scout"]
@@ -129,7 +130,8 @@ async def run_source_agent(agent_name: str, topic: str) -> SourceAgentResult:
     agent = SOURCE_AGENTS[agent_name]
     result = await Runner.run(agent, topic)
     output = result.final_output
-    assert isinstance(output, SourceAgentResult)
+    if not isinstance(output, SourceAgentResult):
+        raise TypeError(f"{agent_name} returned {type(output).__name__}, expected SourceAgentResult")
     output.agent_name = agent_name
     return output
 
@@ -140,9 +142,19 @@ async def research_topic(topic: str, domain: str) -> TopicResearchOutput:
     print(f"  Agents: {', '.join(agent_names)}")
 
     print(f"  Running {len(agent_names)} source agent(s) in parallel...")
-    source_results = await asyncio.gather(
-        *[run_source_agent(name, topic) for name in agent_names]
+    raw_results = await asyncio.gather(
+        *[run_source_agent(name, topic) for name in agent_names],
+        return_exceptions=True,
     )
+    source_results = []
+    for r in raw_results:
+        if isinstance(r, Exception):
+            print(f"  WARNING: source agent failed: {r}")
+        else:
+            source_results.append(r)
+
+    if not source_results:
+        raise RuntimeError(f"All source agents failed for topic: {topic}")
 
     total_findings = sum(len(r.findings) for r in source_results)
     print(f"  Collected {total_findings} raw findings, synthesizing...")
@@ -153,7 +165,8 @@ async def research_topic(topic: str, domain: str) -> TopicResearchOutput:
     )
     synthesis_result = await Runner.run(synthesizer, synthesis_input)
     synthesis = synthesis_result.final_output
-    assert isinstance(synthesis, SynthesisResult)
+    if not isinstance(synthesis, SynthesisResult):
+        raise TypeError(f"Synthesizer returned {type(synthesis).__name__}, expected SynthesisResult")
 
     return TopicResearchOutput(
         topic=topic,
@@ -176,7 +189,8 @@ async def run_research(domain: str, guided: bool = False):
         scout_input = build_scout_input(domain, covered)
         scout_result = await Runner.run(topic_scout, scout_input)
         topics = scout_result.final_output
-        assert isinstance(topics, TopicScoutResult)
+        if not isinstance(topics, TopicScoutResult):
+            raise TypeError(f"Topic Scout returned {type(topics).__name__}, expected TopicScoutResult")
         print(f"Discovered {len(topics.topics)} topics")
 
         if guided:
@@ -188,7 +202,8 @@ async def run_research(domain: str, guided: bool = False):
             scorer_input = build_scorer_input(topics, domain)
             scorer_result = await Runner.run(topic_scorer, scorer_input)
             scored = scorer_result.final_output
-            assert isinstance(scored, TopicScorerResult)
+            if not isinstance(scored, TopicScorerResult):
+                raise TypeError(f"Topic Scorer returned {type(scored).__name__}, expected TopicScorerResult")
             selected = [
                 ResearchTopic(topic=st.topic, reasoning=st.reasoning, source=st.source)
                 for st in scored.ranked_topics[:6]
@@ -198,9 +213,16 @@ async def run_research(domain: str, guided: bool = False):
                 print(f"  - {t.topic}")
 
         print(f"\nResearching {len(selected)} topic(s) in parallel...")
-        results = await asyncio.gather(
-            *[research_topic(t.topic, domain) for t in selected]
+        raw_results = await asyncio.gather(
+            *[research_topic(t.topic, domain) for t in selected],
+            return_exceptions=True,
         )
+        results = []
+        for r in raw_results:
+            if isinstance(r, Exception):
+                print(f"  WARNING: topic research failed: {r}")
+            else:
+                results.append(r)
 
         print(f"\n{'=' * 60}")
         print("RESEARCH COMPLETE")

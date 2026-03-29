@@ -1,7 +1,7 @@
 from agents import Agent, ModelSettings
 
 from models import TopicScoutResult
-from research_agents.config import web_search
+from research_agents.config import retry_settings, web_search
 
 topic_scout = Agent(
     name="Topic Scout",
@@ -33,5 +33,5 @@ overlap with them. Find genuinely new angles.""",
     model="gpt-5.4-mini",
     tools=[web_search],
     output_type=TopicScoutResult,
-    model_settings=ModelSettings(temperature=1.0),
+    model_settings=ModelSettings(temperature=1.0, retry=retry_settings),
 )
