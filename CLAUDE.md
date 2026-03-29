@@ -20,7 +20,13 @@ python research.py "Munich small businesses"
 python research.py "Munich small businesses" --guided
 ```
 
-Requires `OPENAI_API_KEY` in `.env`. No test suite or linter configured.
+Requires `OPENAI_API_KEY` in `.env`.
+
+```bash
+# Lint and test
+ruff check .
+pytest tests/ -v
+```
 
 ## Architecture
 
