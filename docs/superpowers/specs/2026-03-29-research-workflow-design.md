@@ -29,7 +29,7 @@ For each selected topic (in parallel):
   Source agents run in parallel:
     - Community Hunter (forums, Reddit, HN, communities)
     - Review Analyst (App Store, Google Play, Trustpilot, G2)
-    - Trend Scanner (news, industry reports, blogs)
+    - News Scout (news, industry reports, blogs)
     - Data Researcher (government stats, EU reports — only when relevant)
     |
     v
@@ -150,7 +150,7 @@ class TopicResearchOutput(BaseModel):
 - **Output:** SourceAgentResult
 - **Behavior:** Searches App Store, Google Play, Trustpilot, G2, Google Reviews. Looks for recurring negative patterns across multiple reviews, not isolated complaints.
 
-### 5. Trend Scanner (`agents/trend_scanner.py`)
+### 5. News Scout (`agents/news_scout.py`)
 
 - **Model:** gpt-5.4
 - **Tools:** WebSearchTool
@@ -179,7 +179,7 @@ class TopicResearchOutput(BaseModel):
 Not a separate agent. A lightweight gpt-5.4-mini call in the orchestrator that takes a topic and returns which source agents to dispatch.
 
 Rules:
-- Community Hunter and Trend Scanner: run for almost every topic
+- Community Hunter and News Scout: run for almost every topic
 - Review Analyst: run when existing products/services are involved
 - Data Researcher: run when there's a regulatory/demographic/economic angle
 
@@ -221,7 +221,7 @@ agents/
   topic_scorer.py
   community_hunter.py
   review_analyst.py
-  trend_scanner.py
+  news_scout.py
   data_researcher.py
   synthesizer.py
 orchestrator.py
