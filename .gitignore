@@ -1,7 +1,9 @@
 .venv/
-ideas/
-research/
-used_topics.txt
+.env
 __pycache__/
 *.pyc
-.env
+.pytest_cache/
+pytest-of-*/
+research/
+ideas/
+.claude/settings.local.json

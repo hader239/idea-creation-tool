@@ -1,19 +1,19 @@
-# Startup Idea Generator
+# Trend Discovery Tool
 
-An AI-powered workflow that researches market opportunities and generates validated startup ideas using OpenAI's Agents SDK. Focused on Munich / Germany / Europe.
+AI-powered trend discovery using OpenAI's Agents SDK. A multi-agent pipeline researches topics from different angles (forums, reviews, news, institutional data), then synthesizes findings into structured trends.
 
 ## How it works
 
-The workflow is split into two independent steps:
-
-1. **Research** (`research.py`) -- a gpt-5.4 agent with web search finds real pain points and market gaps. Results are saved as JSON files you can review and accumulate over time.
-2. **Ideation** (`ideate.py`) -- a gpt-5.4-mini agent generates startup ideas grounded in the research, and a second gpt-5.4-mini agent validates them. No web search needed -- cheap and fast.
-
 ```
-research.py ──saves──> research/*.json
-                            │
-ideate.py ───reads──────────┘──saves──> ideas/*.md
+research.py → orchestrator.py → research_agents/ → research/*.json
 ```
+
+1. **Topic Scout** discovers 8 research topics (4 from web search, 4 model-generated)
+2. **Topic Scorer** picks the top 6 (autonomous mode) or you choose (guided mode)
+3. **Dispatcher** decides which source agents are relevant per topic
+4. **Source agents** run in parallel — Community Hunter, Review Analyst, News Scout, Data Researcher
+5. **Synthesizer** merges raw findings into structured Trend objects with evidence, confidence scores, and classification
+6. Output saved as one JSON file per topic in `research/`
 
 ## Setup
 
@@ -31,39 +31,33 @@ OPENAI_API_KEY=sk-...
 
 ## Usage
 
-### Step 1: Research
-
-Run the researcher with a focused prompt. Each run creates a new JSON file in `research/`.
-
 ```bash
-python research.py "student pain points in Munich"
-python research.py "small business compliance tools in Germany"
-python research.py "gaps in European digital services"
+# Autonomous mode — auto-selects top 6 topics
+python research.py "Munich small businesses"
+
+# Guided mode — you pick topics by number
+python research.py "Munich small businesses" --guided
 ```
 
-Review the output, delete weak files, run more searches -- build up a research library.
+The tool is domain-agnostic — pass any domain string. Include location context if you want geographically focused results.
 
-### Step 2: Ideate
+Research accumulates over time: the topic scout sees previously covered topics and avoids duplicates.
 
-Point the ideation script at one or more research files:
+## Output
+
+Each run produces JSON files in `research/`, one per topic. Each file contains structured trends with:
+
+- Trend type (unmet need, dissatisfaction wave, behavioral shift, regulatory trigger, demographic shift, technology gap)
+- Direction (emerging, accelerating, peaking, declining)
+- Evidence from multiple source types
+- Confidence scoring based on source diversity
+
+## Development
 
 ```bash
-# From a single research file
-python ideate.py research/2026-03-26-student-pain-points.json
+# Lint
+ruff check .
 
-# Combine multiple research files
-python ideate.py research/*.json
-
-# Generate multiple ideas
-python ideate.py research/*.json --num-ideas 3
+# Test (19 tests, mocked Runner — no API calls)
+pytest tests/ -v
 ```
-
-Valid ideas are saved to `ideas/` as markdown files with the full idea description, research backing, and validation notes.
-
-## Configuration
-
-Edit the constants at the top of each script:
-
-- `RESEARCH_DIR` -- output directory for research files (default: `research`)
-- `IDEAS_DIR` -- output directory for idea files (default: `ideas`)
-- `MAX_ATTEMPTS` -- max generation/validation cycles per idea (default: 5)
