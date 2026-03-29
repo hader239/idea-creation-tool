@@ -133,7 +133,8 @@ async def run_source_agent(agent_name: str, topic: str) -> SourceAgentResult:
     if not isinstance(output, SourceAgentResult):
         got = type(output).__name__
         raise TypeError(f"{agent_name} returned {got}, expected SourceAgentResult")
-    output.agent_name = agent_name
+    output = output.model_copy(update={"agent_name": agent_name})
+    print(f"    {agent_name} done ({len(output.findings)} findings)")
     return output
 
 
@@ -176,7 +177,7 @@ async def research_topic(topic: str, domain: str) -> TopicResearchOutput:
         metadata=ResearchMetadata(
             timestamp=datetime.now().isoformat(),
             domain=domain,
-            sources_used=agent_names,
+            sources_used=[r.agent_name for r in source_results],
         ),
     )
 

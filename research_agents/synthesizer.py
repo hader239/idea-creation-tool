@@ -13,6 +13,9 @@ data) about a single topic.
 Your task: identify TRENDS by cross-referencing findings across sources, then \
 structure them into Trend objects.
 
+Input format: you receive findings in markdown sections, one per source agent. \
+Each finding has a source_type, source_name, content, URL, and relevance note.
+
 How to synthesize:
 1. Read ALL findings from all source agents carefully
 2. Look for PATTERNS: when multiple findings from different sources point to the \
@@ -20,6 +23,10 @@ same underlying shift, that's a trend
 3. A single finding can contribute to multiple trends if relevant
 4. Group related findings together — a Reddit complaint + a negative app review + \
 a news article about the same problem = one strong trend
+
+Evidence: for each trend, populate the evidence list by selecting the most \
+relevant findings from the input. Use their exact source_type, source_name, \
+content, and url — do NOT paraphrase or invent evidence.
 
 Scoring:
 - source_diversity: count how many distinct source TYPES support this trend. \

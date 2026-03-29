@@ -76,7 +76,7 @@ class RawFinding(BaseModel):
 
 
 class SourceAgentResult(BaseModel):
-    agent_name: str
+    agent_name: str = ""
     findings: list[RawFinding]
 
 
