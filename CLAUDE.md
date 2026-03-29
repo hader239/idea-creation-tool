@@ -14,10 +14,10 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
 # Run research (autonomous — auto-selects top 6 topics)
-python cli.py "Munich small businesses"
+python research.py "Munich small businesses"
 
 # Run research (guided — you pick topics by number)
-python cli.py "Munich small businesses" --guided
+python research.py "Munich small businesses" --guided
 ```
 
 Requires `OPENAI_API_KEY` in `.env`. No test suite or linter configured.
@@ -25,10 +25,10 @@ Requires `OPENAI_API_KEY` in `.env`. No test suite or linter configured.
 ## Architecture
 
 ```
-cli.py → orchestrator.py → research_agents/ → research/*.json
+research.py → orchestrator.py → research_agents/ → research/*.json
 ```
 
-- **cli.py**: Entry point with argparse. Domain string + optional `--guided` flag.
+- **research.py**: Entry point with argparse. Domain string + optional `--guided` flag.
 - **orchestrator.py**: Pipeline logic — Topic Scout → Dispatcher → Source Agents (parallel) → Synthesizer → JSON. Handles both autonomous and guided mode.
 - **research_agents/**: Modular agent package. Each agent has its own file:
   - `topic_scout.py` — discovers 8 diverse topics (4 web, 4 model-generated)
