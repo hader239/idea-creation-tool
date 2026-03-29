@@ -48,7 +48,8 @@ def load_covered_topics() -> list[str]:
             topic = data.get("topic", "")
             if topic:
                 topics.append(topic)
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError) as e:
+            print(f"  WARNING: skipping {filename}: {e}")
             continue
     return topics
 
@@ -108,7 +109,8 @@ def format_source_results(results: list[SourceAgentResult]) -> str:
 
 def save_research(output: TopicResearchOutput) -> str:
     os.makedirs(RESEARCH_DIR, exist_ok=True)
-    filename = f"{slugify(output.topic)}.json"
+    timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+    filename = f"{slugify(output.topic)}-{timestamp}.json"
     filepath = os.path.join(RESEARCH_DIR, filename)
     with open(filepath, "w") as f:
         f.write(output.model_dump_json(indent=2))
@@ -122,7 +124,11 @@ async def dispatch_source_agents(topic: str) -> list[str]:
         raise TypeError(f"Dispatcher returned {type(decision).__name__}, expected DispatchDecision")
     valid = [name for name in decision.agents if name in SOURCE_AGENTS]
     if not valid:
-        valid = ["community_hunter", "news_scout"]
+        print(
+            f"  WARNING: dispatcher returned no valid agents "
+            f"(got {decision.agents}), falling back to defaults"
+        )
+        valid = list(SOURCE_AGENTS.keys())[:2]
     return valid
 
 
@@ -149,9 +155,9 @@ async def research_topic(topic: str, domain: str) -> TopicResearchOutput:
         return_exceptions=True,
     )
     source_results = []
-    for r in raw_results:
+    for name, r in zip(agent_names, raw_results):
         if isinstance(r, Exception):
-            print(f"  WARNING: source agent failed: {r}")
+            print(f"  WARNING: {name} failed ({type(r).__name__}): {r}")
         else:
             source_results.append(r)
 
@@ -223,17 +229,32 @@ async def run_research(domain: str, guided: bool = False):
             return_exceptions=True,
         )
         results = []
-        for r in raw_results:
+        for topic, r in zip(selected, raw_results):
             if isinstance(r, Exception):
-                print(f"  WARNING: topic research failed: {r}")
+                print(
+                    f"  WARNING: research failed for "
+                    f"'{topic.topic}' ({type(r).__name__}): {r}"
+                )
             else:
                 results.append(r)
+
+        failed_count = len(selected) - len(results)
+        if not results and failed_count > 0:
+            print(f"\nERROR: all {len(selected)} topic(s) failed. "
+                  "No research was saved.")
+            return
 
         print(f"\n{'=' * 60}")
         print("RESEARCH COMPLETE")
         print(f"{'=' * 60}")
         for output in results:
-            filepath = save_research(output)
-            print(f"  {len(output.trends)} trend(s) -> {filepath}")
+            try:
+                filepath = save_research(output)
+                print(f"  {len(output.trends)} trend(s) -> {filepath}")
+            except OSError as e:
+                print(f"  ERROR: failed to save '{output.topic}': {e}")
+                print(output.model_dump_json(indent=2))
         total = sum(len(r.trends) for r in results)
         print(f"\nTotal: {total} trend(s) across {len(results)} topic(s)")
+        if failed_count:
+            print(f"  ({failed_count} topic(s) failed — see warnings above)")

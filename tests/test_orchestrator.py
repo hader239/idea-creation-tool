@@ -27,6 +27,7 @@ from orchestrator import (
     save_research,
     slugify,
 )
+from research_agents import SOURCE_AGENTS
 
 # --- Helper fixtures ---
 
@@ -201,7 +202,8 @@ async def test_dispatch_fallback_on_empty():
     with patch("orchestrator.Runner.run", new_callable=AsyncMock) as mock_run:
         mock_run.return_value = make_runner_result(decision)
         result = await dispatch_source_agents("test topic")
-    assert result == ["community_hunter", "news_scout"]
+    assert len(result) == 2
+    assert all(name in SOURCE_AGENTS for name in result)
 
 
 # --- run_source_agent (mocked Runner) ---
