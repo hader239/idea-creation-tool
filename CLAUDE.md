@@ -28,6 +28,12 @@ ruff check .
 pytest tests/ -v
 ```
 
+## Development Notes
+
+- The local package is `research_agents/` (not `agents/`) to avoid shadowing the `openai-agents` SDK which installs as `agents`.
+- Tests mock `Runner.run()` — no API calls needed. Run a single test: `pytest tests/test_orchestrator.py::test_name -v`
+- Agent prompts are the primary quality lever — iterate on prompts before adding code complexity.
+
 ## Architecture
 
 ```
